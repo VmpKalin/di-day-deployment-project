@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-0.1.0}
+        VITE_GIT_SHA: ${VITE_GIT_SHA:-}
+        VITE_GIT_BRANCH: ${VITE_GIT_BRANCH:-}
+        VITE_BUILD_TIME: ${VITE_BUILD_TIME:-}
+    image: di-test-project:local
+    ports:
+      - "8080:8080"
