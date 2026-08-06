@@ -25,15 +25,21 @@ echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.d
 apt-get update -q
 
 step "verify docker repo has packages for noble"
-# Capture first: `apt-cache policy | grep -q` dies of SIGPIPE under pipefail.
-policy="$(LC_ALL=C apt-cache policy docker-ce)"
-candidate="$(awk '/^ *Candidate:/ {print $2}' <<<"$policy")"
-if [ -z "$candidate" ] || [ "$candidate" = "(none)" ] || [[ "$policy" != *download.docker.com* ]]; then
-  echo "docker-ce is not installable from download.docker.com for codename 'noble'." >&2
-  echo "apt-cache policy docker-ce reported candidate '${candidate:-<empty>}' — check network/repo status. Not falling back to docker.io." >&2
+# Ask apt directly instead of parsing output: dry-run succeeds iff installable.
+if ! apt-get install --dry-run -qq docker-ce >/dev/null; then
+  echo "docker-ce is not installable for codename 'noble'." >&2
+  echo "Diagnostics (apt-cache policy docker-ce):" >&2
+  apt-cache policy docker-ce >&2 || true
+  echo "Not falling back to docker.io." >&2
   exit 1
 fi
-echo "docker-ce candidate: ${candidate}"
+madison="$(LC_ALL=C apt-cache madison docker-ce)"
+case "$madison" in
+  *download.docker.com*) echo "docker-ce is installable from download.docker.com" ;;
+  *) echo "docker-ce resolves, but not from download.docker.com:" >&2
+     echo "$madison" >&2
+     exit 1 ;;
+esac
 
 step "install docker"
 apt-get install -qy docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
