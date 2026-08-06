@@ -14,6 +14,9 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # The deploy job consumes this exact tag — never recomputes it.
+    outputs:
+      image_tag: sha-${{ steps.image.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,3 +68,34 @@ jobs:
         run: |
           echo "Pushed: ${{ steps.image.outputs.name }}:sha-${{ steps.image.outputs.sha_short }}"
           echo "Pushed: ${{ steps.image.outputs.name }}:latest"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      # Pin the server's host key instead of disabling checking.
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+
+      # Reset the server checkout to THIS workflow's commit before running
+      # deploy.sh, so script + compose file match the image being deployed.
+      # ssh streams remote output live and propagates deploy.sh's exit code.
+      - name: Refresh server checkout and deploy
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd /opt/di-day-deployment-project \
+             && git fetch -q origin main && git reset --hard -q '$GIT_SHA' \
+             && scripts/deploy.sh '$IMAGE_TAG'"
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          GIT_SHA: ${{ github.sha }}
