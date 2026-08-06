@@ -1,0 +1,16 @@
+# Server-side compose file — lives at /opt/di-day-deployment-project/compose.yaml.
+# IMAGE_TAG comes from .env next to this file, written by scripts/deploy.sh.
+services:
+  web:
+    image: ghcr.io/vmpkalin/di-test-project:${IMAGE_TAG:?IMAGE_TAG not set - deploy via scripts/deploy.sh}
+    ports:
+      - "80:8080"
+    restart: unless-stopped
+    # Same probe as the image's own HEALTHCHECK, but via 127.0.0.1: in-container
+    # `localhost` resolves to ::1 first and nginx only listens on IPv4
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
