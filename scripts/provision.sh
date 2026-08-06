@@ -25,11 +25,15 @@ echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.d
 apt-get update -q
 
 step "verify docker repo has packages for noble"
-if ! apt-cache policy docker-ce | grep -q download.docker.com; then
+# Capture first: `apt-cache policy | grep -q` dies of SIGPIPE under pipefail.
+policy="$(LC_ALL=C apt-cache policy docker-ce)"
+candidate="$(awk '/^ *Candidate:/ {print $2}' <<<"$policy")"
+if [ -z "$candidate" ] || [ "$candidate" = "(none)" ] || [[ "$policy" != *download.docker.com* ]]; then
   echo "docker-ce is not installable from download.docker.com for codename 'noble'." >&2
-  echo "The repo was added but apt sees no candidate — check network/repo status. Not falling back to docker.io." >&2
+  echo "apt-cache policy docker-ce reported candidate '${candidate:-<empty>}' — check network/repo status. Not falling back to docker.io." >&2
   exit 1
 fi
+echo "docker-ce candidate: ${candidate}"
 
 step "install docker"
 apt-get install -qy docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
