@@ -14,7 +14,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 step "base packages"
 apt-get update -q
-apt-get install -qy ca-certificates curl ufw
+apt-get install -qy ca-certificates curl git ufw
 
 step "docker apt repo"
 install -m 0755 -d /etc/apt/keyrings

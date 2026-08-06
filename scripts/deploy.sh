@@ -2,7 +2,9 @@
 # Deploy one image tag; roll back to the previous tag if health never goes green.
 # Usage (on the server, as deploy): /opt/di-day-deployment-project/scripts/deploy.sh sha-42eea3c
 set -euo pipefail
-cd "$(dirname "$0")/.."
+# Run everything from server/: its compose.yaml is the deploy one (the repo
+# root holds the local-dev compose file), and .env/.env.prev live here too.
+cd "$(dirname "$0")/../server"
 
 TAG="${1:-}"
 if ! [[ "$TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]] || [ "$#" -ne 1 ]; then

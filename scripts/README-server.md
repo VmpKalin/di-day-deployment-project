@@ -1,11 +1,40 @@
 # Server runbook
 
-Fresh Ubuntu 24.04 (Hetzner CX, amd64). From your machine, in the repo root:
+Fresh Ubuntu 24.04 (Hetzner CX, amd64). Repo is public — no server-side credentials needed.
+
+## 1. Provision (as root, once — safe to re-run)
 
 ```sh
-scp scripts/provision.sh root@<IP>:/root/
-ssh root@<IP> "bash /root/provision.sh"
+ssh root@<IP> "curl -fsSL https://raw.githubusercontent.com/VmpKalin/di-day-deployment-project/main/scripts/provision.sh | bash"
 ```
 
-Safe to re-run if the server is recreated. On success it prints docker/compose
-versions, ufw status, and the `deploy` user's groups.
+## 2. Get the code (as deploy — same commands for first fetch and every update)
+
+```sh
+ssh deploy@<IP>
+cd /opt/di-day-deployment-project
+git init -q -b main
+git remote add origin https://github.com/VmpKalin/di-day-deployment-project.git 2>/dev/null || true
+git fetch -q origin main && git reset --hard -q origin/main
+```
+
+Plain `git clone` would refuse: the directory already exists (and later holds
+`.env` state). `init + fetch + reset` does the same job and is re-runnable;
+`reset --hard` never touches the untracked `server/.env*` files.
+
+## 3. Deploy a tag (as deploy, on the server)
+
+```sh
+/opt/di-day-deployment-project/scripts/deploy.sh sha-42eea3c
+```
+
+Health-gated: on failure it restores the previous tag and exits non-zero.
+
+## 4. Roll back manually
+
+```sh
+cd /opt/di-day-deployment-project
+scripts/deploy.sh "$(sed -n 's/^IMAGE_TAG=//p' server/.env.prev)"
+```
+
+Verify any time: `curl http://<IP>/healthz` → `ok`.

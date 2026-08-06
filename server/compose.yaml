@@ -1,5 +1,7 @@
-# Server-side compose file — lives at /opt/di-day-deployment-project/compose.yaml.
-# IMAGE_TAG comes from .env next to this file, written by scripts/deploy.sh.
+# Server-side compose file — used from the git checkout in
+# /opt/di-day-deployment-project/server. IMAGE_TAG comes from .env next to
+# this file, written by scripts/deploy.sh.
+name: di-day-deployment-project
 services:
   web:
     image: ghcr.io/vmpkalin/di-test-project:${IMAGE_TAG:?IMAGE_TAG not set - deploy via scripts/deploy.sh}
