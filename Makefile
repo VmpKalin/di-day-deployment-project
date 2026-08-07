@@ -1,6 +1,6 @@
 IMAGE      := di-test-project:local
 CONTAINER  := di-test-project
-VERSION    := 0.2.0
+VERSION    := 0.3.0
 SHA        := $(shell git rev-parse --short HEAD)
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD)
 BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
