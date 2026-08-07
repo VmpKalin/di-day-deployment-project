@@ -9,7 +9,7 @@ const buildTime = val(import.meta.env.VITE_BUILD_TIME, 'not-injected')
 
 <template>
   <main class="page">
-    <h1>di-test-project</h1>
+    <h1>v2 — deployed live</h1>
     <div class="block">
       <div class="label">commit</div>
       <div class="sha">{{ sha }}</div>
@@ -25,6 +25,8 @@ const buildTime = val(import.meta.env.VITE_BUILD_TIME, 'not-injected')
 
 <style scoped>
 .page {
+  background: #4f46e5;
+  color: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
